@@ -11,7 +11,7 @@ class VirtualAssistant:
     def __init__(self) -> None:
         start = time()
         print("Carregando base...")
-        loader = TextLoader(file_path="/home/fernando/Python/Whatsapp_bot/guitarra_cort.txt")
+        loader = TextLoader(file_path="/home/fernando/Python/Whatsapp_bot/faq.txt")
         content = loader.load() # Load data into Document objects.
         embeddings = OpenAIEmbeddings()
         self.vector_store = FAISS.from_documents(content, embeddings)
