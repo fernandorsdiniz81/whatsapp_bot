@@ -23,6 +23,9 @@ class VirtualAssistant:
     def user_question(self, name, wa_id: str, human_message: str, specific_prompt=None) -> str:
         similar_response = self.vector_store.similarity_search(human_message, k=3)
         documents = [document.page_content for document in similar_response]
-        specific_prompt = f"Answer all the questions with the best of your ability, in the same language used by the client. The client's name is {name}. You should formulate your answer by using only the content of {documents}." if specific_prompt is None else specific_prompt
+        specific_prompt = f"Answer all the questions with the best of your ability, always in portuguese from Brazil. The client's name is {name}. You should formulate your answer by using only the content of {documents}. You should use a 14 years old content language." if specific_prompt is None else specific_prompt
+
+        # If {human_message} appears to be confused, maybe it's because it's a transcription done by an audio. In these cases, asks the user what did he mean, always in the client's language (normally portuguese from Brazil).
+
         answer = self.ai_engine.answer_messages_with_ai(name, wa_id, human_message, specific_prompt) # -> LangChain object
         return answer

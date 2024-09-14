@@ -3,6 +3,7 @@ import os
 from dotenv import load_dotenv
 from bot import Bot
 
+
 bot = Bot()
 
 app = Flask(__name__)
@@ -34,10 +35,12 @@ def webhook():
     response = request.get_json()
     if not response:
         return jsonify({"error": "Nenhum dado recebido"}), 400
-    
     try:
-        name, wa_id, timestamp, text = bot.read_message(response)
-        bot.answer_message(name, wa_id, timestamp, text)
+        name, wa_id, timestamp, message_id, text, audio_id = bot.read_message(response)
+        if audio_id is None:
+            bot.answer_text_message(name, wa_id, timestamp, message_id, text)
+        else:
+            bot.answer_audio_message(name, wa_id, timestamp, message_id, audio_id)
     except:
         pass
 
@@ -45,7 +48,12 @@ def webhook():
 
 
 
-
-
 if __name__ == "__main__":
+    
+    folders = os.listdir()
+    if "audio" not in folders:
+        os.mkdir("audio")
+    if "log" not in folders:
+        os.mkdir("log")
+
     app.run(host='0.0.0.0', port=5000, debug=True)
