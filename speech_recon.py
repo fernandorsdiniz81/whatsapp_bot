@@ -51,15 +51,3 @@ class SpeechRecognition:
         result = model.transcribe(audio)
         transcription = result["text"]
         return transcription
-
-
-
-# Teste:
-# teste_download = AudioDownload()
-# audio_path = teste_download.audio_download(533708209070298)
-# teste_speech = SpeechRecognition()
-# pergunta = teste_speech.speech_recognition(audio_path)
-# print(pergunta)
-
-
-

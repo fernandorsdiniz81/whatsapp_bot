@@ -21,12 +21,12 @@ def verify():
     # Verificar se o token e o modo estão corretos
     if mode == 'subscribe' and token == VERIFY_TOKEN:
         # Retornar o desafio para a Meta
-        print(challenge, 200)
+        print("Sucesso", challenge, 200)
         return challenge, 200
     else:
         # Se o token não corresponde ou o modo está errado, retornar 403 Forbidden
         print("Verificação falhou", 403)
-        return "Verificação falhou", 403
+        return 403
 
 
 # Rota para receber os dados do webhook
@@ -49,11 +49,11 @@ def webhook():
 
 
 if __name__ == "__main__":
-    
-    folders = os.listdir()
+    my_path = os.path.dirname(__file__)
+    folders = os.listdir(my_path)
     if "audio" not in folders:
-        os.mkdir("audio")
+        os.mkdir(f"{my_path}/audio")
     if "log" not in folders:
-        os.mkdir("log")
+        os.mkdir(f"{my_path}/log")
 
     app.run(host='0.0.0.0', port=5000, debug=True)

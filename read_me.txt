@@ -6,3 +6,6 @@ https://developers.facebook.com/docs/whatsapp/on-premises/get-started
 
 Exemplo de envio de mensagens (site de venda de passagens aéreas)
 https://developers.facebook.com/blog/post/2022/10/24/sending-messages-with-whatsapp-in-your-python-applications/
+
+Eleven Labs (áudio a partir de texto)
+https://elevenlabs.io/docs/api-reference/text-to-speech
