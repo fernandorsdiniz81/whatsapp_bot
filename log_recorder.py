@@ -1,3 +1,4 @@
+import os
 import time
 
 class LogRecorder:
@@ -15,14 +16,14 @@ class LogRecorder:
     
 
     def log_recorder(self, wa_id:str, human_message:dict, bot_message:dict) -> None:
-            print(wa_id, human_message, bot_message)
-
+            my_path = f"{os.path.dirname(__file__)}/log"
             name = human_message.get("name")
             human_time = LogRecorder.timestamp_conversor(human_message.get("timestamp"))
             human_message_text = human_message.get("message")
             bot_time = LogRecorder.timestamp_conversor(bot_message.get("timestamp"))
             bot_message_text = bot_message.get("message")
 
-            with open(f"log/log_{name.split()[0]}_{wa_id[2:]}.txt", "a+") as file:
+            with open(f"{my_path}/log_{name.split()[0]}_{wa_id[2:]}.txt", "a+") as file:
                 dialog = f"{human_time}\n{name}:\n{human_message_text}\n\n{bot_time}\neu(bot):\n{bot_message_text}\n\n\n"
                 file.write(dialog)
+

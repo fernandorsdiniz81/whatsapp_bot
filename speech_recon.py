@@ -22,21 +22,24 @@ class AudioDownload:
             "Authorization": f"Bearer {self.ACCESS_TOKEN}"
         }
 
-        response = requests.get(url, headers=headers) # Retorna um json, com uma chaves URL do áudio.
+        response = requests.get(url, headers=headers) # Retorna um json, com uma chave "url" do áudio.
+        audio_data = response.json()
 
         if response.status_code == 200:
-            audio_url = response.json().get("url")
+            audio_url = audio_data.get("url")
             response = requests.get(audio_url, headers=headers)
             
             if response.status_code == 200:
                 audio = response.content
 
-            with open(f"audio/audio_{audio_id}.ogg", "wb") as file:
+            my_path = f"{os.path.dirname(__file__)}/media"
+            
+            with open(f"{my_path}/audio_{audio_id}.ogg", "wb") as file:
                 file.write(audio)
 
-            audio_path = f"audio/audio_{audio_id}.ogg"
-
-            if f"audio_{audio_id}.ogg" in os.listdir("audio"):
+            audio_path = f"{my_path}/audio_{audio_id}.ogg"
+            
+            if f"audio_{audio_id}.ogg" in os.listdir(my_path):
                 return audio_path
 
         else:
@@ -51,3 +54,11 @@ class SpeechRecognition:
         result = model.transcribe(audio)
         transcription = result["text"]
         return transcription
+    
+
+# file = "WhatsApp Audio 2024-11-19 at 08.15.20.ogg"
+# path = f"{os.path.dirname(__file__)}/media/{file}"
+# teste = SpeechRecognition()
+# transcricao = teste.speech_recognition(path)
+# print(transcricao)
+

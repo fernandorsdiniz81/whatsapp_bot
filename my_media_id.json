@@ -1,0 +1,20 @@
+{
+    "dog": {
+        "file_name": "dog.webp",
+        "mime_type": "image/jpeg",
+        "media_id": "803109805264717",
+        "timestamp": 1734274211
+    },
+    "robo": {
+        "file_name": "robo.jpeg",
+        "mime_type": "image/jpeg",
+        "media_id": "441371519068925",
+        "timestamp": 1734273503
+    },
+    "audio_548658751170396": {
+        "file_name": "audio_548658751170396.ogg",
+        "mime_type": "image/jpeg",
+        "media_id": "9030640656997255",
+        "timestamp": 1734273528
+    }
+}
