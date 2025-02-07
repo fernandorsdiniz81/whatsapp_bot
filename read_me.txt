@@ -9,3 +9,23 @@ https://developers.facebook.com/blog/post/2022/10/24/sending-messages-with-whats
 
 Eleven Labs (áudio a partir de texto)
 https://elevenlabs.io/docs/api-reference/text-to-speech
+
+
+
+################ O arquivo ".env" deverá ter as seguintes variáveis:#######################
+
+# META
+APP_ID = "" # ID do aplicativo
+APP_SECRET = ""
+VERSION = "v20.0" 
+PHONE_NUMBER_ID = "" # Identificação do meu número de telefone
+ACCESS_TOKEN = ""
+VERIFY_TOKEN = "" # token de configuração do webhook
+
+# API keys
+ELEVEN_KEY = ""
+GOOGLE_API_KEY = ""
+
+# Outras configurações
+MY_NUMBER = ""
+ON_OFF_COMMAND = ""
