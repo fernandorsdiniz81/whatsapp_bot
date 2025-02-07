@@ -35,36 +35,17 @@ def verify():
 def webhook():
     response = request.get_json()
 
-    print(f"\nResponse:\n{response}\n\n")
-    
     if not response:
         return jsonify({"error": "Nenhum dado recebido"}), 400
 
     if "contacts" in response["entry"][0]["changes"][0]["value"].keys(): # Será "True", caso response seja a mensagem do usuário e não da máquina
-        name, wa_id, timestamp, message_id, message_type, text, audio_id = bot.read_message(response)
-        
-        print(f"\n\nmessage_type: {message_type}\n\n")
-        
-        if message_type == "text":
-            bot.answer_text_message(name, wa_id, timestamp, message_id, text)
-        elif message_type == "audio":
-            bot.answer_audio_message(name, wa_id, timestamp, message_id, audio_id)
-        else: # somente áudio e texto são processados
-            data = {
-                "messaging_product": "whatsapp",
-                "recipient_type": "individual",
-                "to": wa_id,
-                "type": "text",
-                "text": {
-                "body": "_Desculpe, mas só entendo texto e áudio... não entendo imagens!_" # itálico
-                }
-            }
-            bot.send_message(data)
-
-        return jsonify({"status": "sucesso", "response": response}), 200
+            bot.read_message(response)
+            return jsonify({"status": "sucesso", "response": response}), 200
 
     else:
         return jsonify({"status": "ignorado", "message": "Requisição sem 'contacts' no payload"}), 200
+
+
 
 
 if __name__ == "__main__":

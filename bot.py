@@ -2,15 +2,16 @@ import os
 import re
 import requests
 import time
-from dotenv import load_dotenv
-from ai_engine import AIEngine
-from virtual_assistant import VirtualAssistant
-import speech_recon
 import log_recorder
+import speech_recon
+from dotenv import load_dotenv
+from media_downloader import ImageDownloader
+from gemini_engine import AIEngine
+from virtual_assistant import VirtualAssistant
 
 
 class Bot:
-    def __init__(self, timeout:int=30) -> None:
+    def __init__(self) -> None:
         load_dotenv()
         self.ACCESS_TOKEN = os.environ["ACCESS_TOKEN"]
         self.APP_ID = os.environ["APP_ID"]
@@ -24,9 +25,62 @@ class Bot:
         self.bot_status = True
         self.bot_intelligence = AIEngine()
         self.virtual_assistant = VirtualAssistant()
+        self.image_downloader = ImageDownloader()
         self.audio_downloader = speech_recon.AudioDownload()
         self.speech_recognition = speech_recon.SpeechRecognition()
         self.log_recorder = log_recorder.LogRecorder()
+    
+
+    def read_message(self, response: dict, name=None, wa_id=None, timestamp=None, message_id=None, message_type=None, text=None, audio_id=None, media_id=None) -> tuple:
+        # As variáveis name, wa_id, timestamp, message_id, message_type, text e audio_id são atribuídas 
+        # como "None" por padrão, porque o Flask requer um retorno HTTP válido e um erro ocorreria
+        # a depender do tipo de mensagem (image, text, audio, etc...)
+        name = str(response["entry"][0]["changes"][0]["value"]["contacts"][0]["profile"]["name"])
+        wa_id = str(response["entry"][0]["changes"][0]["value"]["contacts"][0]["wa_id"])
+        timestamp = str(response["entry"][0]["changes"][0]["value"]["messages"][0]["timestamp"])
+        message_id = str(response["entry"][0]["changes"][0]["value"]["messages"][0]["id"])
+        message_type = str(response["entry"][0]["changes"][0]["value"]["messages"][0]["type"])
+
+        if message_type == "text":
+            text = response["entry"][0]["changes"][0]["value"]["messages"][0]["text"]["body"]
+            audio_id = None
+        elif message_type == "audio":
+            text = f"Áudio: {audio_id}"
+            audio_id = response["entry"][0]["changes"][0]["value"]["messages"][0]["audio"]["id"]
+        elif message_type == "image":
+            media_id = response["entry"][0]["changes"][0]["value"]["messages"][0]["image"]["id"]
+
+        # Algumas normalizações:
+        name = name.split(" ")[0] # chamar o cliente apelas pelo primeiro nome é mais natural
+        wa_id = self.normalize_recipient(wa_id) # acrescenta o primeiro "9" caso necessário
+
+        self.human_message[wa_id] = {"name":name, "timestamp":timestamp, "message":text}
+
+        print(f"\nmensagem de {name} ({wa_id}):\n{text}\n")
+        print(f"\n\nmessage_type: {message_type}\n\n")
+        
+        # ações condizentes com cada tipo de mensagem:
+        if message_type == "text":
+            self.answer_text_message(name, wa_id, timestamp, message_id, text)
+        elif message_type == "audio":
+            self.answer_audio_message(name, wa_id, timestamp, message_id, audio_id)
+        elif message_type == "image":
+            self.answer_image_message(name, wa_id, timestamp, message_id, media_id)
+        else: # somente áudio, texto e imagens são processados, para os demais tipos, uma resposta de erro
+            data = {
+                "messaging_product": "whatsapp",
+                "recipient_type": "individual",
+                "to": wa_id,
+                "type": "text",
+                "text": {
+                "body": "_Desculpe, mas só entendo texto, áudio e imagens..._" # itálico
+                }
+            }
+            print(f"\nResponse:\n{response}\n\n")
+
+            self.send_message(data)
+
+        return name, wa_id, timestamp, message_id, message_type, text, audio_id, media_id
     
 
     def normalize_recipient(self, recipient: str) -> str:
@@ -96,34 +150,6 @@ class Bot:
                 }
             self.send_message(data)
             print(f"status do bot: {self.bot_status}")
-        
-
-    def read_message(self, response: dict, name=None, wa_id=None, timestamp=None, message_id=None, message_type=None, text=None, audio_id=None) -> tuple:
-        # As variáveis name, wa_id, timestamp, message_id, message_type, text e audio_id são atribuídas 
-        # como "None" por padrão, porque o Flask requer um retorno HTTP válido e um erro ocorreria
-        # a depender do tipo de mensagem (image, text, audio, etc...)
-        name = str(response["entry"][0]["changes"][0]["value"]["contacts"][0]["profile"]["name"])
-        wa_id = str(response["entry"][0]["changes"][0]["value"]["contacts"][0]["wa_id"])
-        timestamp = str(response["entry"][0]["changes"][0]["value"]["messages"][0]["timestamp"])
-        message_id = str(response["entry"][0]["changes"][0]["value"]["messages"][0]["id"])
-        message_type = str(response["entry"][0]["changes"][0]["value"]["messages"][0]["type"])
-
-        if message_type == "text":
-            text = response["entry"][0]["changes"][0]["value"]["messages"][0]["text"]["body"]
-            audio_id = None
-        elif message_type == "audio":
-            text = f"Áudio: {audio_id}"
-            audio_id = response["entry"][0]["changes"][0]["value"]["messages"][0]["audio"]["id"]
-
-        # Algumas normalizações:
-        name = name.split(" ")[0] # chamar o cliente apelas pelo primeiro nome é mais natural
-        wa_id = self.normalize_recipient(wa_id) # acrescenta o "9" caso necessário
-
-        self.human_message[wa_id] = {"name":name, "timestamp":timestamp, "message":text}
-
-        print(f"\nmensagem de {name} ({wa_id}):\n{text}\n")
-        
-        return name, wa_id, timestamp, message_id, message_type, text, audio_id
 
 
     def read_confirmation(self, message_id: str) -> None:
@@ -142,7 +168,7 @@ class Bot:
         requests.post(url, headers=headers, json=data)
 
 
-    def answer_text_message(self, name: str, wa_id: str, timestamp: str, message_id:str, text: str, specific_prompt=None) -> None:
+    def answer_text_message(self, name: str, wa_id: str, timestamp: str, message_id:str, text: str) -> None:
         self.login(wa_id, text) # Verificação se houve comando para alterar o status do bot
         if self.bot_status is True and text != self.ON_OFF_COMMAND: # Além do status do bot, verifico se o texto não é o ON_OFF_COMMAND para evitar respostas desnecessárias quando o bot é ligado.
             self.read_confirmation(message_id)
@@ -151,7 +177,10 @@ class Bot:
                 self.send_location(wa_id)
                 return
             elif answer[:6].lower() == "thanks":
-                self.send_media(wa_id, "sticker", "1612991982960989")
+                try:
+                    self.send_media(wa_id, "sticker", "1612991982960989") # media_id vale por 30 dias
+                except:
+                    pass
                 return
             else:
                 data = {
@@ -179,13 +208,22 @@ class Bot:
         audio_path = self.audio_downloader.audio_download(audio_id)
         transcription = self.speech_recognition.speech_recognition(audio_path)
         self.human_message[wa_id]["message"] = f"Transcrição do audio {audio_id}: {transcription}"
-        prompt = "Transcrição do áudio do cliente, utilizando o Whisper (em caso de dúvida, solicite gentilmente ao cliente para digitar ao invés de enviar áudio): "
+        prompt = "Transcrição do áudio do cliente, utilizando o Whisper (em caso de dúvida, solicite gentilmente ao cliente para digitar ao invés de enviar áudio). "
         self.answer_text_message(name, wa_id, timestamp, message_id, prompt+transcription)
 
 
+    def answer_image_message(self, name: str, wa_id: str, timestamp: str, message_id:str, media_id:str) -> None:
+        print("midia_id:", media_id)
+        self.image_downloader.download_image(media_id) # salva a imagem recebida em /media/image.jpeg
+        answer = self.virtual_assistant.user_image(name, wa_id)
+        self.human_message[wa_id]["message"] = f"Descrição da imagem: {answer}. "
+        self.answer_text_message(name, wa_id, timestamp, message_id, answer)
+
+        
     def send_media(self, wa_id:str, msg_type:str, media_id:str) -> None:
         '''https://developers.facebook.com/docs/whatsapp/cloud-api/reference/messages/#media-object\n
-        Exemplos de msg_type: "audio", "document", "image", "sticker", "video")'''
+        Exemplos de msg_type: "audio", "document", "image", "sticker", "video")
+        Este método envia mensagems com mídia para o cliente.'''
         
         data = {
             "messaging_product": "whatsapp",
@@ -245,24 +283,3 @@ class Bot:
         else:
             print(f"Falha no envio da mensagem: {response_status_code}")
 
-
-#### TESTE ####
-# bot = Bot()
-# wa_id = "5531920016652"
-# # media_id = "795107592832128" #robozinho
-# # msg_type = "image"
-# # media_id = "512747994877905" # sticker dog
-# media_id = "476103735405941" # sticker valeu
-# msg_type = "sticker"
-# teste.send_media(wa_id, msg_type, media_id)
-
-# data = {
-#     "messaging_product": "whatsapp",
-#     "recipient_type": "individual",
-#     "to": wa_id,
-#     "type": "text",
-#     "text": {
-#     "body": "_Desculpe, mas só entendo texto e áudio... não entendo imagens (ainda)!_" # itálico
-#     }
-# }
-# bot.send_message(data)

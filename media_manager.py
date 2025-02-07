@@ -8,6 +8,7 @@ load_dotenv()
 
 # https://developers.facebook.com/docs/whatsapp/cloud-api/reference/media#get-media-id
 
+# Este módulo serve para gerir as mídias utilizadas para envio de respostas ao cliente.
 
 class MediaUploader:
     def __init__(self) -> None:
@@ -27,6 +28,7 @@ class MediaUploader:
 
         if  file_size <= 500000: # Bytes
             with open(my_file, "rb") as file:
+                url = f"https://graph.facebook.com/v20.0/{self.PHONE_NUMBER_ID}/media"
                 headers = {
                     'Authorization': f'Bearer {self.ACCESS_TOKEN}'
                 }
@@ -36,9 +38,8 @@ class MediaUploader:
                 data = {
                     'messaging_product': 'WHATSAPP'
                 }
-                url = f"https://graph.facebook.com/v20.0/{self.PHONE_NUMBER_ID}/media"
-            
                 response = requests.post(url, headers=headers, files=files, data=data)
+            
 
         else:
             return f"Tamanho do arquivo excedido: {file_size} Bytes (máximo: 500KB)."
@@ -60,6 +61,7 @@ class MediaUploader:
 class MediaManager:
     def __init__(self) -> None:
         pass
+
 
     def get_date(self, timestamp):
         today = time.localtime(int(timestamp))
@@ -194,6 +196,7 @@ class Interface:
                         self.media_manager.create_media_dictionary(self.media_uploader.my_medias)
 
         window.close()
+
 
 
 app = Interface()
