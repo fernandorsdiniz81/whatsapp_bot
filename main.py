@@ -34,6 +34,7 @@ def verify():
 
 def webhook():
     response = request.get_json()
+    print(response)
 
     if not response:
         return jsonify({"error": "Nenhum dado recebido"}), 400
@@ -55,5 +56,7 @@ if __name__ == "__main__":
         os.mkdir(f"{my_path}/media")
     if "log" not in folders:
         os.mkdir(f"{my_path}/log")
+    if "budget" not in folders:
+        os.mkdir(f"{my_path}/budget")
 
     app.run(host='0.0.0.0', port=5000, debug=True)

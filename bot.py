@@ -2,6 +2,7 @@ import os
 import re
 import requests
 import time
+import budget_recorder
 import log_recorder
 import speech_recon
 from dotenv import load_dotenv
@@ -13,15 +14,16 @@ from virtual_assistant import VirtualAssistant
 class Bot:
     def __init__(self) -> None:
         load_dotenv()
-        self.ACCESS_TOKEN = os.environ["ACCESS_TOKEN"]
-        self.APP_ID = os.environ["APP_ID"]
-        self.APP_SECRET = os.environ["APP_SECRET"]
-        self.VERSION = os.environ["VERSION"]
-        self.PHONE_NUMBER_ID = os.environ["PHONE_NUMBER_ID"]
-        self.MY_NUMBER = os.environ["MY_NUMBER"]
-        self.ON_OFF_COMMAND = os.environ["ON_OFF_COMMAND"]
+        self.ACCESS_TOKEN = os.environ.get("ACCESS_TOKEN")
+        self.APP_ID = os.environ.get("APP_ID")
+        self.APP_SECRET = os.environ.get("APP_SECRET")
+        self.VERSION = os.environ.get("VERSION")
+        self.PHONE_NUMBER_ID = os.environ.get("PHONE_NUMBER_ID")
+        self.MY_NUMBER = os.environ.get("MY_NUMBER")
+        self.ON_OFF_COMMAND = os.environ.get("ON_OFF_COMMAND")
         self.human_message = dict()
         self.bot_message = dict()
+        self.budget_requests = dict()
         self.bot_status = True
         self.bot_intelligence = AIEngine()
         self.virtual_assistant = VirtualAssistant()
@@ -29,6 +31,8 @@ class Bot:
         self.audio_downloader = speech_recon.AudioDownload()
         self.speech_recognition = speech_recon.SpeechRecognition()
         self.log_recorder = log_recorder.LogRecorder()
+        self.budget_recorder = budget_recorder.BudgetRecorder()
+    
     
 
     def read_message(self, response: dict, name=None, wa_id=None, timestamp=None, message_id=None, message_type=None, text=None, audio_id=None, media_id=None) -> tuple:
@@ -125,8 +129,6 @@ class Bot:
             "Content-Type": "application/json"
         }
         
-        data = data
-
         response = requests.post(url, headers=headers, json=data)
         return response.status_code
 
@@ -173,15 +175,30 @@ class Bot:
         if self.bot_status is True and text != self.ON_OFF_COMMAND: # Além do status do bot, verifico se o texto não é o ON_OFF_COMMAND para evitar respostas desnecessárias quando o bot é ligado.
             self.read_confirmation(message_id)
             answer = self.virtual_assistant.user_question(name, wa_id, text)
-            if answer[:8] == "location".lower():
+            if "location".lower() in answer:
                 self.send_location(wa_id)
                 return
-            elif answer[:6].lower() == "thanks":
+            
+            elif "thanks".lower() in answer:
                 try:
                     self.send_media(wa_id, "sticker", "1612991982960989") # media_id vale por 30 dias
                 except:
                     pass
                 return
+            
+            # elif "budget".lower() in answer:
+            #     self.budget_recorder.budget_recorder(wa_id,)
+            #     self.send_message()
+            #     data = {
+            #         "messaging_product": "whatsapp",
+            #         "recipient_type": "individual",
+            #         "to": wa_id,
+            #         "type": "text",
+            #         "text": {
+            #         "body": f"_Seu pedido de orçamento foi registrado! Em breve te responderei!_ 😉" # itálico
+            #         }
+            #     }
+            
             else:
                 data = {
                     "messaging_product": "whatsapp",
@@ -266,10 +283,10 @@ class Bot:
             "to": wa_id,
             "type": "location",
             "location": {
-                "longitude": "-44.2022776194688", 
-                "latitude": "-19.958501126246528",
-                "name": "Rua Francisco Ricardo da Silva 781A, Angola Betim",
-                "address": "Oficina Sonhar"
+                "longitude": os.environ.get("LONGITUDE"), 
+                "latitude": os.environ.get("LATITUDE"),
+                "name": os.environ.get("NAME"),
+                "address": os.environ.get("ADDRESS")
                 }
             }
         
@@ -283,3 +300,15 @@ class Bot:
         else:
             print(f"Falha no envio da mensagem: {response_status_code}")
 
+########### TESTE:
+# teste = Bot()
+# data = {
+#         "messaging_product": "whatsapp",
+#         "recipient_type": "individual",
+#         "to": "5531920016652",
+#         "type": "text",
+#         "text": {
+#         "body": "Teste!!"
+#         }
+#     }
+# teste.send_message(data)
